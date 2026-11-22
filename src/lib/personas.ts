@@ -16,6 +16,20 @@ export type MockPersona = "anonymous" | "free" | "learn" | "create" | "both";
 
 export const PERSONA_COOKIE = "slwlrnr_persona";
 
+/**
+ * Whether the mock session may grant anything at all.
+ *
+ * On by default in `npm run dev`. In any production build (which includes
+ * every Vercel deployment) it is OFF unless NEXT_PUBLIC_ENABLE_MOCK_SESSION
+ * is "true" — so a deployed site can't be unlocked by setting a cookie, even
+ * if Deployment Protection is misconfigured. Set the variable only on
+ * environments that are themselves protected. Remove this whole module when
+ * real auth ships.
+ */
+export const MOCK_SESSION_ENABLED =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ENABLE_MOCK_SESSION === "true";
+
 export const PERSONAS: { id: MockPersona; label: string; note: string }[] = [
   { id: "anonymous", label: "Signed out", note: "No account" },
   { id: "free", label: "Free account", note: "5 cards · Signature" },

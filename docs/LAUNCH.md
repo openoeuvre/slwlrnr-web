@@ -37,7 +37,7 @@ These shape the build. Each is a short conversation, not a project.
 | [ ] | Sign-in / sign-up pages in the site's design | C | L |
 | [ ] | `profiles` + `entitlements` tables, row-level security on both | C | L |
 | [ ] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
-| [ ] | Remove the dev session switcher (`tier-switcher.tsx`) from production builds | C | L |
+| [x] | Dev session switcher disabled in production builds unless `NEXT_PUBLIC_ENABLE_MOCK_SESSION=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
 | [ ] | Account page: email, memberships, manage billing, sign out, delete account | C | L |
 | [ ] | Account deletion actually deletes (or anonymises) data — required by privacy law in several places | C | L |
 

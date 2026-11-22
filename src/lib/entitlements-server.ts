@@ -9,10 +9,17 @@ import "server-only";
  */
 
 import { cookies } from "next/headers";
-import { ENTITLEMENTS, PERSONA_COOKIE, isPersona } from "./personas";
+import {
+  ENTITLEMENTS,
+  MOCK_SESSION_ENABLED,
+  PERSONA_COOKIE,
+  isPersona,
+} from "./personas";
 import { ANONYMOUS, type Entitlements } from "./tiers";
 
 export async function getEntitlements(): Promise<Entitlements> {
+  // With the mock disabled, nobody is entitled to anything until real auth.
+  if (!MOCK_SESSION_ENABLED) return ANONYMOUS;
   const value = (await cookies()).get(PERSONA_COOKIE)?.value;
   return isPersona(value) ? ENTITLEMENTS[value] : ANONYMOUS;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "@/lib/session";
+import { MOCK_SESSION_ENABLED, useSession } from "@/lib/session";
 import { PRICING } from "@/lib/tiers";
 import { Button, Rule } from "./ui";
 
@@ -36,11 +36,13 @@ export function Paywall({
           {pricing.name} · ${pricing.amount}/{pricing.interval}
         </p>
         <p className="mt-3 text-sm leading-relaxed text-ink">{headline}</p>
-        <Button className="mt-5 w-full" onClick={subscribe}>
-          Subscribe — ${pricing.amount}/mo
+        <Button className="mt-5 w-full" onClick={subscribe} disabled={!MOCK_SESSION_ENABLED}>
+          {MOCK_SESSION_ENABLED ? `Subscribe — $${pricing.amount}/mo` : "Opening soon"}
         </Button>
         <p className="mt-3 text-center text-[0.6875rem] text-faint">
-          Mock subscribe. Stripe not connected in this build.
+          {MOCK_SESSION_ENABLED
+            ? "Mock subscribe. Stripe not connected in this build."
+            : "Subscriptions open at launch."}
         </p>
       </div>
     );
@@ -82,12 +84,13 @@ export function Paywall({
             {pricing.blurb}
           </p>
           <Rule className="my-7" />
-          <Button className="w-full" onClick={subscribe}>
-            Subscribe
+          <Button className="w-full" onClick={subscribe} disabled={!MOCK_SESSION_ENABLED}>
+            {MOCK_SESSION_ENABLED ? "Subscribe" : "Opening soon"}
           </Button>
           <p className="mt-3 text-xs leading-relaxed text-faint">
-            Cancel any time. Mock subscribe — Stripe is not connected in this
-            build, but the entitlement state is real.
+            {MOCK_SESSION_ENABLED
+              ? "Cancel any time. Mock subscribe — Stripe is not connected in this build, but the entitlement state is real."
+              : "Subscriptions open at launch."}
           </p>
         </div>
       </div>

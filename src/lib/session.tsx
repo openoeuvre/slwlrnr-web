@@ -24,6 +24,7 @@ import {
 } from "react";
 import {
   ENTITLEMENTS,
+  MOCK_SESSION_ENABLED,
   PERSONA_COOKIE,
   PERSONAS,
   isPersona,
@@ -31,7 +32,7 @@ import {
 } from "./personas";
 import type { Entitlements } from "./tiers";
 
-export { PERSONAS, type MockPersona };
+export { MOCK_SESSION_ENABLED, PERSONAS, type MockPersona };
 
 type SessionValue = {
   persona: MockPersona;
@@ -47,6 +48,7 @@ type SessionValue = {
 const SessionContext = createContext<SessionValue | null>(null);
 
 function readCookie(): MockPersona {
+  if (!MOCK_SESSION_ENABLED) return "anonymous";
   const m = document.cookie.match(new RegExp(`(?:^|; )${PERSONA_COOKIE}=([^;]*)`));
   const v = m ? decodeURIComponent(m[1]) : null;
   return isPersona(v) ? v : "anonymous";
@@ -64,6 +66,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const setPersona = useCallback(
     (p: MockPersona) => {
+      if (!MOCK_SESSION_ENABLED) return; // deployed builds: no mock unlocks
       setPersonaState(p);
       setBlendsUsed(0);
       document.cookie = `${PERSONA_COOKIE}=${p}; path=/; max-age=31536000; samesite=lax`;

@@ -7,13 +7,16 @@
  */
 
 import { useState } from "react";
-import { PERSONAS, useSession } from "@/lib/session";
+import { MOCK_SESSION_ENABLED, PERSONAS, useSession } from "@/lib/session";
 
 export function TierSwitcher() {
   const { persona, setPersona } = useSession();
   const [open, setOpen] = useState(false);
 
   const current = PERSONAS.find((p) => p.id === persona);
+
+  // Not rendered at all where the mock session is disabled (production).
+  if (!MOCK_SESSION_ENABLED) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50 print:hidden">
