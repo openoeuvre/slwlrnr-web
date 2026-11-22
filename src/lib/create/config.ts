@@ -10,14 +10,14 @@
 export const INFERENCE_URL = process.env.INFERENCE_URL ?? "http://127.0.0.1:8010";
 
 // --- The open free-tier decision, as one switch ------------------------------
-// Not locked yet. Whichever way it lands, only this object changes — the
-// interface and gating read from it. `one_blend` and `daily_cap` need real
-// per-user counting, which arrives with Supabase; until then they are advisory.
+// Decided: daily cap. Counted per user per UTC day in Supabase
+// (create_usage, consume_free_blend). Only this object changes if the
+// policy does — the route and interface read from it.
 export type FreeTierMode = "one_blend" | "daily_cap" | "unlimited_lowres";
 
 export const FREE_TIER = {
-  mode: "unlimited_lowres" as FreeTierMode,
-  dailyCap: 5,
+  mode: "daily_cap" as FreeTierMode, // decided — see docs/LAUNCH.md
+  dailyCap: 5, // placeholder number; change freely
   system: "signature", // free is locked to the Signature process
   numImages: 1, // one output per blend on free
   lowres: true, // free outputs are delivered low-resolution (640 px)

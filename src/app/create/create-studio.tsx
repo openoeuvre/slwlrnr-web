@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { SOURCES, STUDIO } from "@/lib/create/config";
+import { useSession } from "@/lib/session";
 import type { BlendResponse, SystemsResponse } from "@/lib/create/types";
 
 export function CreateStudio({
@@ -49,6 +50,8 @@ export function CreateStudio({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { freeBlends, refresh: refreshSession } = useSession();
+  const outOfFree = !studio && !!freeBlends && freeBlends.used >= freeBlends.cap;
 
   // Losing Studio (e.g. switching session) snaps back to Signature.
   useEffect(() => {
@@ -92,7 +95,10 @@ export function CreateStudio({
       const r = await fetch("/api/create", { method: "POST", body: fd });
       const data = await r.json();
       if (!r.ok) setError(data.error || "The blend didn't complete.");
-      else setResult(data as BlendResponse);
+      else {
+        setResult(data as BlendResponse);
+        refreshSession(); // updates the free-blend count
+      }
     } catch {
       setError("Couldn't reach the studio. Check that the inference service is running.");
     } finally {
@@ -101,7 +107,7 @@ export function CreateStudio({
   }
 
   const ready = files.length;
-  const canCreate = signedIn && ready >= MIN && ready <= MAX && !loading;
+  const canCreate = signedIn && !outOfFree && ready >= MIN && ready <= MAX && !loading;
 
   return (
     <div className="grid gap-14 lg:grid-cols-12">
@@ -282,15 +288,26 @@ export function CreateStudio({
           <p className="mt-3 text-xs leading-relaxed text-faint">
             {!signedIn ? (
               <>
-                <Link href="/account" className="link-underline text-muted">
-                  Create a free account
+                <Link href="/signin?next=/create" className="link-underline text-muted">
+                  Sign in or create a free account
                 </Link>{" "}
                 to make your first blend.
               </>
             ) : studio ? (
               "Studio · full resolution. Blends take fifteen seconds to a minute."
+            ) : outOfFree ? (
+              <>
+                That&rsquo;s today&rsquo;s {freeBlends?.cap} free blends. They reset at midnight
+                UTC — or Studio removes the limit.
+              </>
             ) : (
-              "Free · Signature process · low resolution. Blends take fifteen seconds to a minute."
+              <>
+                Free · Signature process · low resolution
+                {freeBlends
+                  ? ` · ${freeBlends.cap - freeBlends.used} of ${freeBlends.cap} left today`
+                  : ""}
+                . Blends take fifteen seconds to a minute.
+              </>
             )}
           </p>
         </section>

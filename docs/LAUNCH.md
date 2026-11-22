@@ -31,13 +31,13 @@ These shape the build. Each is a short conversation, not a project.
 
 | | Item | Owner | Gate |
 |---|---|---|---|
-| [ ] | Create Supabase project (one project, shared by all three business lines) | M | L |
+| [x] | Create Supabase project (one project, shared by all three business lines) | M | L |
 | [ ] | Configure Google OAuth (Google Cloud console: OAuth client, consent screen, verified domain) | M+C | L |
 | [ ] | Configure email magic link; set sender to a slwlrnr.art address (custom SMTP — Supabase's default sender is rate-limited and not for production) | M+C | L |
-| [ ] | Sign-in / sign-up pages in the site's design | C | L |
-| [ ] | `profiles` + `entitlements` tables, row-level security on both | C | L |
-| [ ] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
-| [x] | Dev session switcher disabled in production builds unless `NEXT_PUBLIC_ENABLE_MOCK_SESSION=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
+| [x] | Sign-in page — Google + email magic link, `/auth/callback`, sign-out (`src/app/signin`, `src/app/auth`) | C | L |
+| [~] | Schema written — `supabase/migrations/0001_accounts.sql` (profiles, subscriptions, create_usage, RLS). **Run it in the SQL Editor** | M | L |
+| [x] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
+| [x] | Dev membership grants disabled in production builds unless `NEXT_PUBLIC_ENABLE_DEV_GRANTS=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
 | [ ] | Account page: email, memberships, manage billing, sign out, delete account | C | L |
 | [ ] | Account deletion actually deletes (or anonymises) data — required by privacy law in several places | C | L |
 
@@ -78,7 +78,7 @@ These shape the build. Each is a short conversation, not a project.
 | [ ] | **Fix the engine blocking itself:** `/blend` runs the model synchronously inside an async handler, so one blend freezes every other request (including `/systems`). Wrap in a threadpool, or let Modal scale per request | C | L |
 | [ ] | Job + polling for `/api/create` — blends take 15–60 s, near Vercel's function limits | C | L |
 | [ ] | Upload size: Vercel caps request bodies at ~4.5 MB. Downscale sources in the browser before upload | C | L |
-| [ ] | Per-user free-tier counting (needs Supabase) | C | L |
+| [x] | Per-user free-tier daily cap — counted in Supabase, enforced in `/api/create` and in the database | C | L |
 | [ ] | Rate limiting on `/api/create` for every tier — GPU time is the one cost that scales with abuse | C | L |
 | [ ] | Content safety: an upload/output filter. Users supply arbitrary images; you are hosting and processing them ⚖ | M+C | L |
 | [ ] | Cost guardrail: Modal spend alert + hard monthly cap | M | L |

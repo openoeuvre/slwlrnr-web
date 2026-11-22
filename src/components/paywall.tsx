@@ -1,6 +1,7 @@
 "use client";
 
-import { MOCK_SESSION_ENABLED, useSession } from "@/lib/session";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "@/lib/session";
 import { PRICING } from "@/lib/tiers";
 import { Button, Rule } from "./ui";
 
@@ -20,14 +21,29 @@ export function Paywall({
   points: string[];
   compact?: boolean;
 }) {
-  const { setPersona, persona } = useSession();
+  const { user, devGrants, setDevGrant } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
   const pricing = PRICING[plan];
 
-  // Mock subscribe. Real implementation opens Stripe Checkout.
+  // Until Stripe: signed-out visitors go to sign-in; signed-in testers get a
+  // dev grant where enabled; otherwise the button waits for launch.
+  // Real implementation: start Stripe Checkout for this plan.
+  const canAct = !user || devGrants.enabled;
   function subscribe() {
-    if (plan === "learn") setPersona(persona === "create" ? "both" : "learn");
-    else setPersona(persona === "learn" ? "both" : "create");
+    if (!user) {
+      router.push(`/signin?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (devGrants.enabled) setDevGrant(plan === "learn" ? "learn" : "studio", true);
   }
+  const buttonLabel = (full: string) =>
+    !user ? "Sign in to subscribe" : devGrants.enabled ? full : "Opening soon";
+  const footnote = !user
+    ? "One account for the gallery, Learn and Create."
+    : devGrants.enabled
+      ? "Dev grant — Stripe isn't connected yet. Grants your account access for testing."
+      : "Subscriptions open at launch.";
 
   if (compact) {
     return (
@@ -36,14 +52,10 @@ export function Paywall({
           {pricing.name} · ${pricing.amount}/{pricing.interval}
         </p>
         <p className="mt-3 text-sm leading-relaxed text-ink">{headline}</p>
-        <Button className="mt-5 w-full" onClick={subscribe} disabled={!MOCK_SESSION_ENABLED}>
-          {MOCK_SESSION_ENABLED ? `Subscribe — $${pricing.amount}/mo` : "Opening soon"}
+        <Button className="mt-5 w-full" onClick={subscribe} disabled={!canAct}>
+          {buttonLabel(`Subscribe — $${pricing.amount}/mo`)}
         </Button>
-        <p className="mt-3 text-center text-[0.6875rem] text-faint">
-          {MOCK_SESSION_ENABLED
-            ? "Mock subscribe. Stripe not connected in this build."
-            : "Subscriptions open at launch."}
-        </p>
+        <p className="mt-3 text-center text-[0.6875rem] text-faint">{footnote}</p>
       </div>
     );
   }
@@ -84,14 +96,10 @@ export function Paywall({
             {pricing.blurb}
           </p>
           <Rule className="my-7" />
-          <Button className="w-full" onClick={subscribe} disabled={!MOCK_SESSION_ENABLED}>
-            {MOCK_SESSION_ENABLED ? "Subscribe" : "Opening soon"}
+          <Button className="w-full" onClick={subscribe} disabled={!canAct}>
+            {buttonLabel("Subscribe")}
           </Button>
-          <p className="mt-3 text-xs leading-relaxed text-faint">
-            {MOCK_SESSION_ENABLED
-              ? "Cancel any time. Mock subscribe — Stripe is not connected in this build, but the entitlement state is real."
-              : "Subscriptions open at launch."}
-          </p>
+          <p className="mt-3 text-xs leading-relaxed text-faint">{footnote}</p>
         </div>
       </div>
     </section>

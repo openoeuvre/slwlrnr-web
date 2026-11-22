@@ -1,15 +1,12 @@
 "use client";
 
 /**
- * MOCK SESSION.
+ * Session context for client components.
  *
- * Stands in for Supabase auth + Stripe entitlements so the whole app can be
- * designed and reviewed without either service existing yet.
- *
- * The persona lives in a cookie rather than localStorage so the SERVER can
- * read it too — paid card content is gated server-side and never sent to a
- * non-subscriber. Changing persona writes the cookie and refreshes the route
- * so server components re-render with the new entitlements.
+ * The truth lives on the server (/api/me, computed from the Supabase session
+ * and subscriptions). This context mirrors it for display — header, account
+ * page, paywall buttons — and refreshes whenever the auth state changes.
+ * Never gate anything on these values alone; the server re-checks.
  */
 
 import { useRouter } from "next/navigation";
@@ -22,71 +19,85 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  ENTITLEMENTS,
-  MOCK_SESSION_ENABLED,
-  PERSONA_COOKIE,
-  PERSONAS,
-  isPersona,
-  type MockPersona,
-} from "./personas";
-import type { Entitlements } from "./tiers";
+import { DEV_GRANTS_COOKIE, type DevGrant } from "./dev-grants";
+import { createClient } from "./supabase/browser";
+import { supabaseConfigured } from "./supabase/config";
+import { ANONYMOUS, type Entitlements } from "./tiers";
 
-export { MOCK_SESSION_ENABLED, PERSONAS, type MockPersona };
-
-type SessionValue = {
-  persona: MockPersona;
-  setPersona: (p: MockPersona) => void;
+type Me = {
+  user: { email: string | null } | null;
   entitlements: Entitlements;
-  user: { email: string } | null;
-  /** Blends consumed this period. Reset by the switcher. */
-  blendsUsed: number;
-  recordBlend: () => void;
-  resetBlends: () => void;
+  freeBlends: { used: number; cap: number } | null;
+  devGrants: { enabled: boolean; active: DevGrant[] };
+};
+
+type SessionValue = Me & {
+  loading: boolean;
+  refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
+  setDevGrant: (grant: DevGrant, on: boolean) => Promise<void>;
+};
+
+const EMPTY: Me = {
+  user: null,
+  entitlements: ANONYMOUS,
+  freeBlends: null,
+  devGrants: { enabled: false, active: [] },
 };
 
 const SessionContext = createContext<SessionValue | null>(null);
 
-function readCookie(): MockPersona {
-  if (!MOCK_SESSION_ENABLED) return "anonymous";
-  const m = document.cookie.match(new RegExp(`(?:^|; )${PERSONA_COOKIE}=([^;]*)`));
-  const v = m ? decodeURIComponent(m[1]) : null;
-  return isPersona(v) ? v : "anonymous";
-}
-
 export function SessionProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [persona, setPersonaState] = useState<MockPersona>("anonymous");
-  const [blendsUsed, setBlendsUsed] = useState(0);
+  const [me, setMe] = useState<Me>(EMPTY);
+  const [loading, setLoading] = useState(true);
 
-  // Read after mount so server and first client render agree.
-  useEffect(() => {
-    setPersonaState(readCookie());
+  const refresh = useCallback(async () => {
+    try {
+      const r = await fetch("/api/me", { cache: "no-store" });
+      if (r.ok) setMe((await r.json()) as Me);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const setPersona = useCallback(
-    (p: MockPersona) => {
-      if (!MOCK_SESSION_ENABLED) return; // deployed builds: no mock unlocks
-      setPersonaState(p);
-      setBlendsUsed(0);
-      document.cookie = `${PERSONA_COOKIE}=${p}; path=/; max-age=31536000; samesite=lax`;
-      // Server components (gated card content) re-render with the new cookie.
-      router.refresh();
+  useEffect(() => {
+    refresh();
+    if (!supabaseConfigured) return;
+    const { data } = createClient().auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        refresh();
+        router.refresh();
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [refresh, router]);
+
+  const signOut = useCallback(async () => {
+    await createClient().auth.signOut();
+    await fetch("/auth/signout", { method: "POST" });
+    await refresh();
+    router.push("/");
+    router.refresh();
+  }, [refresh, router]);
+
+  const setDevGrant = useCallback(
+    async (grant: DevGrant, on: boolean) => {
+      const next = new Set(me.devGrants.active);
+      if (on) next.add(grant);
+      else next.delete(grant);
+      document.cookie = `${DEV_GRANTS_COOKIE}=${encodeURIComponent(
+        [...next].join(","),
+      )}; path=/; max-age=31536000; samesite=lax`;
+      await refresh();
+      router.refresh(); // server components re-render with the new grants
     },
-    [router],
+    [me.devGrants.active, refresh, router],
   );
 
   const value = useMemo<SessionValue>(
-    () => ({
-      persona,
-      setPersona,
-      entitlements: ENTITLEMENTS[persona],
-      user: persona === "anonymous" ? null : { email: `${persona}@example.com` },
-      blendsUsed,
-      recordBlend: () => setBlendsUsed((n) => n + 1),
-      resetBlends: () => setBlendsUsed(0),
-    }),
-    [persona, setPersona, blendsUsed],
+    () => ({ ...me, loading, refresh, signOut, setDevGrant }),
+    [me, loading, refresh, signOut, setDevGrant],
   );
 
   return (

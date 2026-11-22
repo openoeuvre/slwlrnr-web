@@ -1,4 +1,10 @@
 import { FREE_TIER, INFERENCE_URL, SOURCES, STUDIO, type Tier } from "@/lib/create/config";
+import {
+  freeBlendsUsedToday,
+  freeCap,
+  freeCapApplies,
+  recordFreeBlend,
+} from "@/lib/create/usage-server";
 import { getEntitlements } from "@/lib/entitlements-server";
 
 export const runtime = "nodejs";
@@ -21,6 +27,17 @@ export async function POST(req: Request) {
     );
   }
   const tier: Tier = entitlements.create ? "premium" : "free";
+
+  // Free daily cap — checked before spending GPU time, recorded after success.
+  const capped = tier === "free" && freeCapApplies();
+  if (capped && (await freeBlendsUsedToday()) >= freeCap()) {
+    return Response.json(
+      {
+        error: `That's today's ${freeCap()} free blends. They reset at midnight UTC — or Studio removes the limit.`,
+      },
+      { status: 429 },
+    );
+  }
 
   const form = await req.formData();
   const files = form.getAll("images").filter((f): f is File => f instanceof File);
@@ -58,7 +75,9 @@ export async function POST(req: Request) {
       const detail = await r.text();
       return Response.json({ error: `Inference error: ${detail}` }, { status: r.status });
     }
-    return Response.json(await r.json());
+    const result = await r.json();
+    if (capped) await recordFreeBlend();
+    return Response.json(result);
   } catch {
     return Response.json(
       { error: `Can't reach the inference service at ${INFERENCE_URL}. Is it running?` },

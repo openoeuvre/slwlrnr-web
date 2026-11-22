@@ -59,9 +59,11 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-5">
+            {/* Visible on mobile too — it was desktop-only, leaving phones
+                with no way to sign in. */}
             <Link
-              href="/account"
-              className="label hidden text-muted transition-colors hover:text-ink sm:block"
+              href={user ? "/account" : "/signin"}
+              className="label text-muted transition-colors hover:text-ink"
             >
               {user ? "Account" : "Sign in"}
             </Link>
