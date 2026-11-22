@@ -33,9 +33,9 @@ These shape the build. Each is a short conversation, not a project.
 |---|---|---|---|
 | [x] | Create Supabase project (one project, shared by all three business lines) | M | L |
 | [ ] | Configure Google OAuth (Google Cloud console: OAuth client, consent screen, verified domain) | M+C | L |
-| [ ] | Configure email magic link; set sender to a slwlrnr.art address (custom SMTP — Supabase's default sender is rate-limited and not for production) | M+C | L |
+| [~] | Email magic link working locally on Supabase's default sender. Still to do: set sender to a slwlrnr.art address (custom SMTP — Supabase's default sender is rate-limited and not for production) | M+C | L |
 | [x] | Sign-in page — Google + email magic link, `/auth/callback`, sign-out (`src/app/signin`, `src/app/auth`) | C | L |
-| [~] | Schema written — `supabase/migrations/0001_accounts.sql` (profiles, subscriptions, create_usage, RLS). **Run it in the SQL Editor** | M | L |
+| [x] | Schema live — `supabase/migrations/0001_accounts.sql` (profiles, subscriptions, create_usage, RLS) | M | L |
 | [x] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
 | [x] | Dev membership grants disabled in production builds unless `NEXT_PUBLIC_ENABLE_DEV_GRANTS=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
 | [ ] | Account page: email, memberships, manage billing, sign out, delete account | C | L |
