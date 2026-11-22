@@ -1,0 +1,27 @@
+{
+  "name": "slwlrnr-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "shopify:check": "node scripts/shopify-check.mjs",
+    "cards:export": "cd ../slwlrnr-cards && python3 export_to_web.py --web ../slwlrnr-web"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "server-only": "^0.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.0"
+  }
+}

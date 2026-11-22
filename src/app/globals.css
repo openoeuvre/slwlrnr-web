@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* Explicit scan root so class detection does not depend on cwd. */
+@source "../../src";
+
+/* ------------------------------------------------------------------
+   SLWLRNR design tokens — "cool minimal / architectural"
+   True white and grey. One grotesque at two weights. Thin rules.
+   Tight grid. Colour comes from the work, never from the interface.
+   ------------------------------------------------------------------ */
+
+@theme {
+  --color-paper: #ffffff;
+  --color-wash: #f5f5f6;
+  --color-rule: #e2e2e4;
+  --color-rule-strong: #c9c9cd;
+  --color-faint: #a1a1a8;
+  --color-muted: #6a6a72;
+  --color-ink: #101012;
+
+  /* The only accent in the system. Used for focus and active state only. */
+  --color-signal: #2f2f34;
+
+  --font-sans: var(--font-grotesque), ui-sans-serif, system-ui, -apple-system,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--letter-spacing: 0.09em;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-synthesis-weight: none;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+/* ------------------------------------------------------------------
+   Component layer. Deliberately small — the discipline of this design
+   is in what it refuses to add.
+   ------------------------------------------------------------------ */
+
+@layer components {
+  /* Uppercase micro-label. The architectural monograph tell. */
+  .label {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Display headings: tightened tracking, never bold. */
+  .display {
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    line-height: 1.04;
+  }
+
+  .rule {
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .measure {
+    max-width: 62ch;
+  }
+
+  .link-underline {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--color-rule-strong);
+    transition: text-decoration-color 150ms ease;
+  }
+
+  .link-underline:hover {
+    text-decoration-color: var(--color-ink);
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 1px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Create — ported from slwlrnr-create, made achromatic.
+   ------------------------------------------------------------------ */
+
+/* Results surface like a print coming up in the developing tray. */
+@keyframes develop {
+  from {
+    opacity: 0;
+    filter: blur(16px) saturate(0.35) contrast(0.9);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0) saturate(1) contrast(1);
+  }
+}
+
+.develop {
+  animation: develop 1.6s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+/* A faint travelling hairline while a blend is running. */
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(16, 16, 18, 0.07), transparent);
+  animation: sweep 1.8s linear infinite;
+}
+
+/* Respect reduced motion throughout. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
