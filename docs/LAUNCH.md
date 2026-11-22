@@ -130,8 +130,9 @@ These shape the build. Each is a short conversation, not a project.
 
 | | Item | Owner | Gate |
 |---|---|---|---|
-| [ ] | **Git repository** — none yet; needed for Vercel and for undo | M+C | L |
-| [ ] | Vercel project, environment variables per environment (dev / preview / prod) | M+C | L |
+| [x] | **Git repository** — local repo initialised, first commit made; push to a private GitHub repo | M+C | L |
+| [~] | Vercel project, environment variables per environment (dev / preview / prod) | M+C | L |
+| [ ] | **Vercel Deployment Protection on every deployment until real auth ships** — the dev session switcher lets anyone unlock paid Learn content and Studio | M | L |
 | [ ] | Production build passes (`npm run build`) — never run yet | C | L |
 | [ ] | Error monitoring (e.g. Sentry) on site + engine | C | L |
 | [ ] | Privacy-friendly analytics | M+C | S |
