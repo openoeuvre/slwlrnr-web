@@ -20,10 +20,10 @@ These shape the build. Each is a short conversation, not a project.
 |---|---|---|---|---|
 | [x] | **Sign-in methods** — *decided: Google + email magic link* | Google **plus** email magic link, via Supabase Auth. Google-only shuts out people without Google accounts — notably schools and teachers, a natural Learn audience. Magic links mean no passwords to manage. Apple sign-in later, if an app ever happens. | M | L |
 | [x] | **Subscription billing** — *decided: Stripe for Learn + Studio; Shopify keeps prints* | Stripe Billing: Checkout to subscribe, Customer Portal to manage or cancel, webhooks write entitlements into Supabase. Two products (Learn $10, Studio $30), monthly. | M+C | L |
-| [ ] | **Annual pricing / bundle** | Optional. A Learn + Studio bundle or annual discount is easy to add in Stripe later — decide whether it's there on day one. | M | S |
+| [x] | **Bundle** — *decided: Learn + Studio $35/mo* (annual pricing still open) | Optional. A Learn + Studio bundle or annual discount is easy to add in Stripe later — decide whether it's there on day one. | M | S |
 | [x] | **Create free tier** — *decided: daily cap* (number TBD) | Currently `unlimited_lowres`. **Unlimited means unlimited GPU cost.** Recommend `daily_cap` (e.g. 3–5/day) — it needs the per-user counting Supabase brings anyway. | M | L |
 | [ ] | **Account required for free Create?** | Yes (current behaviour). Anonymous GPU access invites abuse and can't be capped per person. | M | L |
-| [ ] | **Free trial for subscriptions?** | Optional. Stripe supports trials natively; decide before building Checkout. | M | S |
+| [x] | **Free trial** — *decided: yes* (length, card-up-front TBD) | Optional. Stripe supports trials natively; decide before building Checkout. | M | S |
 
 ---
 
@@ -49,8 +49,8 @@ These shape the build. Each is a short conversation, not a project.
 
 | | Item | Owner | Gate |
 |---|---|---|---|
-| [ ] | Stripe account, business verification, bank account | M | L |
-| [ ] | Products + prices: Learn $10/mo, Studio $30/mo (test mode first) | M+C | L |
+| [~] | Stripe account created (test mode); business verification + bank account still to do | M | L |
+| [ ] | Products + prices: Learn $10/mo, Studio $30/mo, Learn + Studio bundle $35/mo (test mode first) | M+C | L |
 | [ ] | Checkout route — replaces the mock "Subscribe" buttons in `Paywall` | C | L |
 | [ ] | Webhook handler: `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
 | [ ] | Customer Portal (manage card, cancel, invoices) linked from Account | C | L |
