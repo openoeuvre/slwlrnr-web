@@ -2,78 +2,125 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/container";
-import { PageHeader, Rule, SpecRow } from "@/components/ui";
+import { Note, PageHeader, Rule, SpecRow } from "@/components/ui";
+import { PLANS, isPlanId } from "@/lib/billing/plans";
 import { freeBlendsUsedToday, freeCap, freeCapApplies } from "@/lib/create/usage-server";
 import { getViewer } from "@/lib/entitlements-server";
-import { PRICING } from "@/lib/tiers";
+import { createClient } from "@/lib/supabase/server";
+import { ManageBillingButton } from "./manage-billing-button";
 import { SignOutButton } from "./sign-out-button";
 
 export const metadata: Metadata = { title: "Account" };
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+const fmt = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
   const { user, entitlements } = await getViewer();
   if (!user) redirect("/signin?next=/account");
+  const { checkout } = await searchParams;
+
+  // The current membership, as last written by the Stripe webhook.
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("subscriptions")
+    .select("product, status, trial_end, current_period_end, cancel_at_period_end, stripe_customer_id")
+    .order("updated_at", { ascending: false });
+  const live = (rows ?? []).find((r) => ["active", "trialing", "past_due"].includes(r.status));
+  const hasBillingAccount = (rows ?? []).some((r) => r.stripe_customer_id);
 
   const usage =
     !entitlements.create && freeCapApplies()
       ? { used: await freeBlendsUsedToday(), cap: freeCap() }
       : null;
 
-  const memberships = [
-    {
-      key: "learn" as const,
-      active: entitlements.learn,
-      href: "/learn",
-      detail: entitlements.learn
-        ? "The full card library, every essay and glossary, print-ready PDFs."
-        : "Five free cards. Subscribe for the full library and print-ready PDFs.",
-    },
-    {
-      key: "create" as const,
-      active: entitlements.create,
-      href: "/create",
-      detail: entitlements.create
-        ? "Every natural system, four variations at once, full resolution."
-        : `Free: the Signature process, low resolution${
-            usage ? ` — ${Math.max(0, usage.cap - usage.used)} of ${usage.cap} blends left today` : ""
-          }. Studio unlocks every natural system.`,
-    },
-  ];
+  const plan = live && isPlanId(live.product) ? PLANS[live.product] : null;
+
+  let state: string | null = null;
+  if (live) {
+    if (live.status === "past_due") {
+      state = "Your last payment didn't go through. Update your card in billing to keep access.";
+    } else if (live.status === "trialing") {
+      state = live.cancel_at_period_end
+        ? `Free trial — ends ${fmt(live.trial_end)}. You won't be charged.`
+        : `Free trial — ends ${fmt(live.trial_end)}, then $${plan?.amount}/month.`;
+    } else {
+      state = live.cancel_at_period_end
+        ? `Cancelled — access continues until ${fmt(live.current_period_end)}.`
+        : `Renews ${fmt(live.current_period_end)} at $${plan?.amount}/month.`;
+    }
+  }
 
   return (
     <Container>
       <PageHeader eyebrow="Account" title={user.email ?? "Your account"} />
 
-      <section className="pb-8">
-        <h2 className="label text-faint">Memberships</h2>
-        <div className="mt-4 grid gap-px bg-rule sm:grid-cols-2">
-          {memberships.map((m) => {
-            const p = PRICING[m.key];
-            return (
-              <div key={m.key} className="bg-paper p-7">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h3 className="text-lg">{p.name}</h3>
-                  <span className={`label ${m.active ? "text-ink" : "text-faint"}`}>
-                    {m.active ? "Active" : "Not subscribed"}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{m.detail}</p>
-                <p className="label mt-6 text-faint tabular-nums">
-                  ${p.amount} / {p.interval}
-                </p>
-                <div className="mt-5">
-                  <Link href={m.href} className="label link-underline text-ink">
-                    {m.active ? `Go to ${m.key === "learn" ? "Learn" : "Create"}` : `See ${p.name}`}
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+      {checkout === "success" && (
+        <div className="-mt-4 mb-10">
+          <Note>
+            Welcome. {live
+              ? "Your membership is active."
+              : "Your membership is being set up — this usually takes a few seconds. Refresh if it doesn't appear."}
+          </Note>
         </div>
-        <p className="mt-4 text-xs leading-relaxed text-faint">
-          Billing, receipts and cancellation will be managed here once payments open.
-        </p>
+      )}
+
+      <section className="pb-8">
+        <h2 className="label text-faint">Membership</h2>
+
+        {plan ? (
+          <div className="mt-4 border border-rule p-7">
+            <div className="flex items-baseline justify-between gap-4">
+              <h3 className="text-lg">{plan.name}</h3>
+              <span className="label text-ink">
+                {live?.status === "trialing" ? "Trial" : live?.status === "past_due" ? "Payment due" : "Active"}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-muted">{state}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <ManageBillingButton />
+              {plan.id !== "bundle" && (
+                <span className="text-xs text-faint">
+                  Switch plans, update your card or cancel in billing.
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-px bg-rule sm:grid-cols-3">
+            {(["learn", "studio", "bundle"] as const).map((id) => (
+              <div key={id} className="bg-paper p-6">
+                <h3 className="text-[0.9375rem]">{PLANS[id].name}</h3>
+                <p className="label mt-2 text-faint tabular-nums">${PLANS[id].amount} / month</p>
+                <Link
+                  href={id === "learn" ? "/learn" : "/create"}
+                  className="label link-underline mt-5 inline-block text-ink"
+                >
+                  {id === "bundle" ? "See both" : `See ${PLANS[id].name}`}
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!plan && hasBillingAccount && (
+          <div className="mt-4">
+            <ManageBillingButton label="Past invoices" />
+          </div>
+        )}
+
+        {usage && (
+          <p className="mt-5 text-xs leading-relaxed text-faint">
+            Free Create: {Math.max(0, usage.cap - usage.used)} of {usage.cap} blends left today.
+          </p>
+        )}
       </section>
 
       <section className="pb-8 pt-10">

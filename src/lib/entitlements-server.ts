@@ -38,11 +38,18 @@ export async function getViewer(): Promise<Viewer> {
     .from("subscriptions")
     .select("product, status, current_period_end");
 
+  // The bundle grants both; see src/lib/billing/plans.ts.
+  const GRANTS: Record<string, ("learn" | "studio")[]> = {
+    learn: ["learn"],
+    studio: ["studio"],
+    bundle: ["learn", "studio"],
+  };
+
   const now = Date.now();
-  const has = (product: "learn" | "studio") =>
+  const has = (grant: "learn" | "studio") =>
     (subs ?? []).some(
-      (s) =>
-        s.product === product &&
+      (s: { product: string; status: string; current_period_end: string | null }) =>
+        (GRANTS[s.product] ?? []).includes(grant) &&
         LIVE.has(s.status) &&
         (!s.current_period_end || Date.parse(s.current_period_end) > now),
     );

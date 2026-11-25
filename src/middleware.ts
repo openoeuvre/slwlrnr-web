@@ -58,8 +58,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except static assets and images.
+  // Everything except static assets, images, and the Stripe webhook (Stripe
+  // has no session to refresh, and the webhook must see the raw request).
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|brand/|rooms/|learn/img/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|brand/|rooms/|learn/img/|api/stripe/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

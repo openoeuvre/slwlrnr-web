@@ -53,9 +53,9 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | Products + prices in **test mode**: Learn $10, Studio $30, bundle $35 — see `docs/STRIPE.md` | M+C | L |
 | [ ] | Recreate products + prices in **live mode** (same IDs, lookup keys, metadata) | M+C | L |
 | [ ] | Decide on Stripe Managed Payments (Stripe as merchant of record, handles tax filing) vs. standard + Stripe Tax | M ⚖ | L |
-| [ ] | Checkout route — replaces the mock "Subscribe" buttons in `Paywall` | C | L |
-| [ ] | Webhook handler: `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
-| [ ] | Customer Portal (manage card, cancel, invoices) linked from Account | C | L |
+| [x] | Checkout route (`/api/billing/checkout`) — 7-day trial, card required, one membership per person; Paywall offers the bundle | C | L |
+| [x] | Webhook handler (`/api/stripe/webhook`): `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
+| [x] | Customer Portal — plan switching, card, invoices, cancel at period end; **Manage billing** on Account | C | L |
 | [ ] | Failed-payment handling: grace period, then entitlement drops | C | L |
 | [ ] | Stripe Tax — digital subscriptions are taxable in some US states and abroad ⚖ | M | L |
 | [ ] | End-to-end test in test mode: subscribe → access → cancel → access ends | M+C | L |
