@@ -50,7 +50,9 @@ These shape the build. Each is a short conversation, not a project.
 | | Item | Owner | Gate |
 |---|---|---|---|
 | [~] | Stripe account created (test mode); business verification + bank account still to do | M | L |
-| [ ] | Products + prices: Learn $10/mo, Studio $30/mo, Learn + Studio bundle $35/mo (test mode first) | M+C | L |
+| [x] | Products + prices in **test mode**: Learn $10, Studio $30, bundle $35 — see `docs/STRIPE.md` | M+C | L |
+| [ ] | Recreate products + prices in **live mode** (same IDs, lookup keys, metadata) | M+C | L |
+| [ ] | Decide on Stripe Managed Payments (Stripe as merchant of record, handles tax filing) vs. standard + Stripe Tax | M ⚖ | L |
 | [ ] | Checkout route — replaces the mock "Subscribe" buttons in `Paywall` | C | L |
 | [ ] | Webhook handler: `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
 | [ ] | Customer Portal (manage card, cancel, invoices) linked from Account | C | L |
