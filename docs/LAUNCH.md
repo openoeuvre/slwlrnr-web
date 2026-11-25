@@ -23,7 +23,7 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | **Bundle** — *decided: Learn + Studio $35/mo* (annual pricing still open) | Optional. A Learn + Studio bundle or annual discount is easy to add in Stripe later — decide whether it's there on day one. | M | S |
 | [x] | **Create free tier** — *decided: daily cap* (number TBD) | Currently `unlimited_lowres`. **Unlimited means unlimited GPU cost.** Recommend `daily_cap` (e.g. 3–5/day) — it needs the per-user counting Supabase brings anyway. | M | L |
 | [ ] | **Account required for free Create?** | Yes (current behaviour). Anonymous GPU access invites abuse and can't be capped per person. | M | L |
-| [x] | **Free trial** — *decided: yes* (length, card-up-front TBD) | Optional. Stripe supports trials natively; decide before building Checkout. | M | S |
+| [x] | **Free trial** — *decided: 7 days, card required, on Learn, Studio and the bundle* | Optional. Stripe supports trials natively; decide before building Checkout. | M | S |
 
 ---
 
