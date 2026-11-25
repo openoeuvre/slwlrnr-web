@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/container";
 import { Note, PageHeader, Rule, SpecRow } from "@/components/ui";
+import { existingCustomerId, reconcileCustomer } from "@/lib/billing/customer";
 import { PLANS, isPlanId } from "@/lib/billing/plans";
 import { freeBlendsUsedToday, freeCap, freeCapApplies } from "@/lib/create/usage-server";
 import { getViewer } from "@/lib/entitlements-server";
@@ -29,11 +30,32 @@ export default async function AccountPage({
 
   // The current membership, as last written by the Stripe webhook.
   const supabase = await createClient();
-  const { data: rows } = await supabase
-    .from("subscriptions")
-    .select("product, status, trial_end, current_period_end, cancel_at_period_end, stripe_customer_id")
-    .order("updated_at", { ascending: false });
-  const live = (rows ?? []).find((r) => ["active", "trialing", "past_due"].includes(r.status));
+  const readRows = () =>
+    supabase
+      .from("subscriptions")
+      .select("product, status, trial_end, current_period_end, cancel_at_period_end, stripe_customer_id")
+      .order("updated_at", { ascending: false });
+  const isLive = (r: { status: string }) => ["active", "trialing", "past_due"].includes(r.status);
+
+  let { data: rows } = await readRows();
+  let reconcileFailed = false;
+
+  // Back from Checkout but the webhook hasn't landed (or isn't arriving):
+  // ask Stripe directly rather than make the new member wait.
+  if (checkout === "success" && !(rows ?? []).some(isLive)) {
+    try {
+      const customerId = await existingCustomerId(user.id);
+      if (customerId) {
+        await reconcileCustomer(customerId);
+        ({ data: rows } = await readRows());
+      }
+    } catch (e) {
+      reconcileFailed = true;
+      console.error("[billing] reconcile on return from checkout failed", e);
+    }
+  }
+
+  const live = (rows ?? []).find(isLive);
   const hasBillingAccount = (rows ?? []).some((r) => r.stripe_customer_id);
 
   const usage =
@@ -67,7 +89,9 @@ export default async function AccountPage({
           <Note>
             Welcome. {live
               ? "Your membership is active."
-              : "Your membership is being set up — this usually takes a few seconds. Refresh if it doesn't appear."}
+              : reconcileFailed
+                ? "Your payment went through, but we couldn't load your membership. Refresh in a moment — if it still doesn't appear, contact us and we'll sort it out."
+                : "Your membership is being set up — this usually takes a few seconds. Refresh if it doesn't appear."}
           </Note>
         </div>
       )}

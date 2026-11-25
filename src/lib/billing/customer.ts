@@ -48,15 +48,50 @@ export async function existingCustomerId(userId: string): Promise<string | null>
   return data?.stripe_customer_id ?? null;
 }
 
-/** Does this user already hold a membership (any plan)? */
-export async function hasLiveSubscription(userId: string): Promise<boolean> {
+/**
+ * Does this user already hold a membership (any plan)?
+ *
+ * Asks STRIPE, not just our table. Our table is filled by webhooks, so if
+ * webhooks are delayed or failing it reads empty — and an empty answer here
+ * let a second, double-billed subscription through in testing. Stripe is the
+ * source of truth for "is this person paying".
+ */
+export async function hasLiveSubscription(
+  userId: string,
+  customerId?: string,
+): Promise<boolean> {
   const { data } = await createAdminClient()
     .from("subscriptions")
     .select("id")
     .eq("user_id", userId)
     .in("status", [...LIVE_STATUSES])
     .limit(1);
-  return (data?.length ?? 0) > 0;
+  if ((data?.length ?? 0) > 0) return true;
+
+  if (!customerId) return false;
+  const subs = await stripe().subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 20,
+  });
+  return subs.data.some((s) =>
+    (LIVE_STATUSES as readonly string[]).includes(s.status),
+  );
+}
+
+/**
+ * Pull every subscription this customer has from Stripe into our table.
+ * The backstop for a missed or delayed webhook — used when someone returns
+ * from Checkout and their membership isn't showing yet.
+ */
+export async function reconcileCustomer(customerId: string): Promise<void> {
+  const { syncSubscription } = await import("./sync");
+  const subs = await stripe().subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 20,
+  });
+  for (const s of subs.data) await syncSubscription(s.id);
 }
 
 /** One free trial per person: anyone who has ever subscribed has had theirs. */

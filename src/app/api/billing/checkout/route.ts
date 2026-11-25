@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const customer = await getOrCreateCustomer(user);
 
     // One membership per person: existing members change plan in the portal.
-    if (await hasLiveSubscription(user.id)) {
+    if (await hasLiveSubscription(user.id, customer)) {
       const portal = await stripe().billingPortal.sessions.create({
         customer,
         return_url: siteUrl(request, "/account"),
