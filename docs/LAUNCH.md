@@ -32,7 +32,9 @@ These shape the build. Each is a short conversation, not a project.
 | | Item | Owner | Gate |
 |---|---|---|---|
 | [x] | Create Supabase project (one project, shared by all three business lines) | M | L |
-| [ ] | Configure Google OAuth (Google Cloud console: OAuth client, consent screen, verified domain) | M+C | L |
+| [x] | Google OAuth working locally (own client in Google Cloud; redirect → Supabase callback) | M+C | L |
+| [ ] | Google consent screen branding: logo, name, verified slwlrnr.art — today it reads "continue to zuivxhppamdgqgcnwggh.supabase.co". Full fix needs a Supabase custom domain (auth.slwlrnr.art) | M | S |
+| [ ] | Production auth URLs: Supabase Site URL → https://slwlrnr.art; add prod + Vercel `/auth/callback` to Supabase redirect URLs; add origins to the Google client | M | L |
 | [~] | Email magic link working locally on Supabase's default sender. Still to do: set sender to a slwlrnr.art address (custom SMTP — Supabase's default sender is rate-limited and not for production) | M+C | L |
 | [x] | Sign-in page — Google + email magic link, `/auth/callback`, sign-out (`src/app/signin`, `src/app/auth`) | C | L |
 | [x] | Schema live — `supabase/migrations/0001_accounts.sql` (profiles, subscriptions, create_usage, RLS) | M | L |
