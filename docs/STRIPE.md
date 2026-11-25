@@ -49,3 +49,25 @@ live mode with the same IDs, lookup keys and metadata.
 `checkout.session.completed`, `customer.subscription.created`,
 `customer.subscription.updated`, `customer.subscription.deleted`,
 `invoice.paid`, `invoice.payment_failed`.
+
+## Testing locally
+
+Keep three terminals running: the site (`npm run dev`), the Create engine if
+needed, and Stripe's event forwarder:
+
+```bash
+stripe listen \
+  --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.paid,invoice.payment_failed \
+  --forward-to localhost:3000/api/stripe/webhook
+```
+
+Current Stripe CLI versions require `--events` (or `--all-snapshot`). It prints
+a `whsec_…` signing secret — put it in `.env.local` as `STRIPE_WEBHOOK_SECRET`
+and restart `npm run dev`. The secret stays the same across `stripe listen`
+runs on the same machine.
+
+Test card: `4242 4242 4242 4242`, any future expiry, any CVC. Others (declines,
+3-D Secure) at https://docs.stripe.com/testing.
+
+Each forwarded event shows `[200]` when the site handled it. `[500]` usually
+means `0002_billing.sql` hasn't been run, or `SUPABASE_SECRET_KEY` is missing.
