@@ -37,7 +37,8 @@ export default async function AccountPage({
       .order("updated_at", { ascending: false });
   const isLive = (r: { status: string }) => ["active", "trialing", "past_due"].includes(r.status);
 
-  let { data: rows } = await readRows();
+  let { data: rows, error: rowsError } = await readRows();
+  if (rowsError) console.error("[billing] couldn't read subscriptions:", rowsError.message);
   let reconcileFailed = false;
 
   // Back from Checkout but the webhook hasn't landed (or isn't arriving):
@@ -45,6 +46,7 @@ export default async function AccountPage({
   if (checkout === "success" && !(rows ?? []).some(isLive)) {
     try {
       const customerId = await existingCustomerId(user.id);
+      console.log(`[billing] account: no live membership in Supabase; Stripe customer = ${customerId ?? "none"}`);
       if (customerId) {
         await reconcileCustomer(customerId);
         ({ data: rows } = await readRows());

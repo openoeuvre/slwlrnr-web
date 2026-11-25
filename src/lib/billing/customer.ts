@@ -31,21 +31,34 @@ export async function getOrCreateCustomer(user: {
     { idempotencyKey: `slwlrnr-customer-${user.id}` },
   );
 
-  await admin
+  // Upsert, not update: accounts made before the schema existed have no
+  // profile row, and an update would silently match nothing.
+  const { error } = await admin
     .from("profiles")
-    .update({ stripe_customer_id: customer.id })
-    .eq("id", user.id);
+    .upsert({ id: user.id, email: user.email, stripe_customer_id: customer.id }, { onConflict: "id" });
+  if (error) console.error(`[billing] couldn't save customer ${customer.id} to profile:`, error.message);
 
   return customer.id;
 }
 
 export async function existingCustomerId(userId: string): Promise<string | null> {
-  const { data } = await createAdminClient()
+  const { data, error } = await createAdminClient()
     .from("profiles")
     .select("stripe_customer_id")
     .eq("id", userId)
     .maybeSingle();
-  return data?.stripe_customer_id ?? null;
+  if (error) console.error("[billing] profile lookup failed:", error.message);
+  if (data?.stripe_customer_id) return data.stripe_customer_id;
+
+  // Not on the profile (missing row, or the save failed): ask Stripe, which
+  // tags every customer we create with the Supabase user ID.
+  const found = await stripe().customers.search({
+    query: `metadata['supabase_user_id']:'${userId.replace(/[^a-f0-9-]/gi, "")}'`,
+    limit: 1,
+  });
+  const id = found.data[0]?.id ?? null;
+  if (!id) console.warn(`[billing] no Stripe customer found for user ${userId}`);
+  return id;
 }
 
 /**
@@ -91,6 +104,7 @@ export async function reconcileCustomer(customerId: string): Promise<void> {
     status: "all",
     limit: 20,
   });
+  console.log(`[billing] reconciling ${subs.data.length} subscription(s) for ${customerId}`);
   for (const s of subs.data) await syncSubscription(s.id);
 }
 
