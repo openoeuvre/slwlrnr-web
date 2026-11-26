@@ -37,10 +37,10 @@ These shape the build. Each is a short conversation, not a project.
 | [ ] | Production auth URLs: Supabase Site URL → https://slwlrnr.art; add prod + Vercel `/auth/callback` to Supabase redirect URLs; add origins to the Google client | M | L |
 | [~] | Email magic link working locally on Supabase's default sender. Still to do: set sender to a slwlrnr.art address (custom SMTP — Supabase's default sender is rate-limited and not for production) | M+C | L |
 | [x] | Sign-in page — Google + email magic link, `/auth/callback`, sign-out (`src/app/signin`, `src/app/auth`) | C | L |
-| [x] | Schema live — `supabase/migrations/0001_accounts.sql` (profiles, subscriptions, create_usage, RLS) | M | L |
+| [x] | Schema live — `supabase/migrations/0001`–`0003` (profiles, subscriptions, create_usage, RLS, table grants). **Every new table needs explicit grants** — this project doesn't add them automatically | M | L |
 | [x] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
 | [x] | Dev membership grants disabled in production builds unless `NEXT_PUBLIC_ENABLE_DEV_GRANTS=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
-| [ ] | Account page: email, memberships, manage billing, sign out, delete account | C | L |
+| [~] | Account page: email, membership + trial state, manage billing, sign out — done. Delete account still to do | C | L |
 | [ ] | Account deletion actually deletes (or anonymises) data — required by privacy law in several places | C | L |
 
 ## 2 · Payments
@@ -56,9 +56,9 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | Checkout route (`/api/billing/checkout`) — 7-day trial, card required, one membership per person; Paywall offers the bundle | C | L |
 | [x] | Webhook handler (`/api/stripe/webhook`): `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
 | [x] | Customer Portal — plan switching, card, invoices, cancel at period end; **Manage billing** on Account | C | L |
-| [ ] | Failed-payment handling: grace period, then entitlement drops | C | L |
+| [~] | Failed-payment handling: `past_due` keeps access while Stripe retries, then `canceled`/`unpaid` drops it. Turn on Smart Retries + failed-payment emails in the Stripe Dashboard | M | L |
 | [ ] | Stripe Tax — digital subscriptions are taxable in some US states and abroad ⚖ | M | L |
-| [ ] | End-to-end test in test mode: subscribe → access → cancel → access ends | M+C | L |
+| [~] | End-to-end test in test mode: subscribe → trial → access → plan switch ✓. Still to test: cancel → access ends; failed card (`4000 0000 0000 0341`) | M+C | L |
 
 ### Prints — Shopify (already live)
 
@@ -136,7 +136,7 @@ These shape the build. Each is a short conversation, not a project.
 |---|---|---|---|
 | [x] | **Git repository** — local repo initialised, first commit made; push to a private GitHub repo | M+C | L |
 | [~] | Vercel project, environment variables per environment (dev / preview / prod) | M+C | L |
-| [ ] | **Vercel Deployment Protection on every deployment until real auth ships** — the dev session switcher lets anyone unlock paid Learn content and Studio | M | L |
+| [x] | ~~Vercel Deployment Protection until real auth ships~~ — real auth and billing are in; dev grants are off in production builds | M | L |
 | [ ] | Production build passes (`npm run build`) — never run yet | C | L |
 | [ ] | Error monitoring (e.g. Sentry) on site + engine | C | L |
 | [ ] | Privacy-friendly analytics | M+C | S |
