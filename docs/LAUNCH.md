@@ -40,8 +40,8 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | Schema live — `supabase/migrations/0001`–`0003` (profiles, subscriptions, create_usage, RLS, table grants). **Every new table needs explicit grants** — this project doesn't add them automatically | M | L |
 | [x] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
 | [x] | Dev membership grants disabled in production builds unless `NEXT_PUBLIC_ENABLE_DEV_GRANTS=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
-| [~] | Account page: email, membership + trial state, manage billing, sign out — done. Delete account still to do | C | L |
-| [ ] | Account deletion actually deletes (or anonymises) data — required by privacy law in several places | C | L |
+| [~] | Account page: email, membership + trial state, manage billing, sign out, delete account — built; delete still to test | C | L |
+| [~] | Account deletion: cancels Stripe subscriptions, strips name/email from the Stripe customer (invoices kept for tax), deletes the Supabase user — rows cascade. Still to test | C | L |
 
 ## 2 · Payments
 
@@ -56,9 +56,9 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | Checkout route (`/api/billing/checkout`) — 7-day trial, card required, one membership per person; Paywall offers the bundle | C | L |
 | [x] | Webhook handler (`/api/stripe/webhook`): `checkout.session.completed`, `customer.subscription.updated` / `.deleted`, `invoice.payment_failed` → entitlements table. Idempotent; raw-body signature check | C | L |
 | [x] | Customer Portal — plan switching, card, invoices, cancel at period end; **Manage billing** on Account | C | L |
-| [~] | Failed-payment handling: `past_due` keeps access while Stripe retries, then `canceled`/`unpaid` drops it. Turn on Smart Retries + failed-payment emails in the Stripe Dashboard | M | L |
+| [x] | Failed-payment handling: `past_due` keeps access while Smart Retries run (8 tries / 2 weeks), then the subscription is cancelled and access drops. Failed-payment emails on. **Re-check these settings in live mode** | M | L |
 | [ ] | Stripe Tax — digital subscriptions are taxable in some US states and abroad ⚖ | M | L |
-| [~] | End-to-end test in test mode: subscribe → trial → access → plan switch ✓. Still to test: cancel → access ends; failed card (`4000 0000 0000 0341`) | M+C | L |
+| [x] | End-to-end test in test mode: subscribe → trial → access → plan switch → cancel → access ends; failed card → past due (access kept) → retries exhausted → cancelled → access ends (test clock) | M+C | L |
 
 ### Prints — Shopify (already live)
 

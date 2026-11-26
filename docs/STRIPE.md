@@ -71,3 +71,27 @@ Test card: `4242 4242 4242 4242`, any future expiry, any CVC. Others (declines,
 
 Each forwarded event shows `[200]` when the site handled it. `[500]` usually
 means `0002_billing.sql` hasn't been run, or `SUPABASE_SECRET_KEY` is missing.
+
+### Testing renewals and failed payments (test clocks)
+
+Time-based behaviour — trial ending, renewal, retries — is tested with a
+**test clock**: a customer attached to a clock whose time you move forward.
+
+1. Create a clock, a customer on it with `metadata.supabase_user_id` set to
+   your user, the card `pm_card_chargeCustomerFail` (always declines), and a
+   Learn subscription with a 7-day trial.
+2. Move it forward (each move must be to a LATER time):
+   `stripe test_helpers test_clocks advance <clock_id> --frozen-time <unix time>`
+   — or Dashboard → Billing → Test clocks → Advance time.
+3. +8 days → `invoice.payment_failed`, status `past_due`, Account shows "Your
+   last payment didn't go through", access kept.
+4. +16 more days → retries exhausted → `customer.subscription.deleted`, access
+   ends.
+
+Retry policy lives at Billing → Revenue recovery → Retries (Smart Retries,
+8 tries / 2 weeks, then **cancel the subscription**). Failed-payment emails at
+Settings → Billing → Subscriptions and emails. Both must be set again in live
+mode.
+
+If `stripe listen` prints `websocket … close sent`, it has disconnected —
+restart it.
