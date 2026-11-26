@@ -72,6 +72,12 @@ export async function syncSubscription(subscriptionId: string): Promise<void> {
     },
     { onConflict: "stripe_subscription_id" },
   );
+  if (error?.code === "23503") {
+    // Foreign key: the user no longer exists (account deleted). Nothing to
+    // record — and throwing would make Stripe retry for days.
+    console.warn(`[billing] subscription ${sub.id} belongs to a deleted account; skipped`);
+    return;
+  }
   if (error) throw new Error(`[billing] upsert failed for ${sub.id}: ${error.message}`);
 }
 

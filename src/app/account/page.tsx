@@ -8,6 +8,7 @@ import { PLANS, isPlanId } from "@/lib/billing/plans";
 import { freeBlendsUsedToday, freeCap, freeCapApplies } from "@/lib/create/usage-server";
 import { getViewer } from "@/lib/entitlements-server";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteAccount } from "./delete-account";
 import { ManageBillingButton } from "./manage-billing-button";
 import { SignOutButton } from "./sign-out-button";
 
@@ -164,6 +165,9 @@ export default async function AccountPage({
         </dl>
         <div className="mt-6">
           <SignOutButton />
+        </div>
+        <div className="mt-16">
+          <DeleteAccount hasMembership={Boolean(live)} />
         </div>
       </section>
     </Container>
