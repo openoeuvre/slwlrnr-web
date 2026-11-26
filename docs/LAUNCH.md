@@ -137,7 +137,7 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | **Git repository** — local repo initialised, first commit made; push to a private GitHub repo | M+C | L |
 | [~] | Vercel project, environment variables per environment (dev / preview / prod) | M+C | L |
 | [x] | ~~Vercel Deployment Protection until real auth ships~~ — real auth and billing are in; dev grants are off in production builds | M | L |
-| [ ] | Production build passes (`npm run build`) — never run yet | C | L |
+| [x] | Production build passes (`npm run build`) — 52 pages, gallery prerendered from Shopify, refreshes every 5 min | C | L |
 | [ ] | Error monitoring (e.g. Sentry) on site + engine | C | L |
 | [ ] | Privacy-friendly analytics | M+C | S |
 | [ ] | `robots.txt`, `sitemap.xml`, canonical URLs | C | L |
