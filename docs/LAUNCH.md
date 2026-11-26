@@ -40,8 +40,8 @@ These shape the build. Each is a short conversation, not a project.
 | [x] | Schema live — `supabase/migrations/0001`–`0003` (profiles, subscriptions, create_usage, RLS, table grants). **Every new table needs explicit grants** — this project doesn't add them automatically | M | L |
 | [x] | **Replace the mock session.** Only `src/lib/entitlements-server.ts` (server) and `src/lib/session.tsx` (client) change — every gate already reads through them | C | L |
 | [x] | Dev membership grants disabled in production builds unless `NEXT_PUBLIC_ENABLE_DEV_GRANTS=true` — server ignores the cookie, switcher and mock Subscribe buttons don't render | C | L |
-| [~] | Account page: email, membership + trial state, manage billing, sign out, delete account — built; delete still to test | C | L |
-| [~] | Account deletion: cancels Stripe subscriptions, strips name/email from the Stripe customer (invoices kept for tax), deletes the Supabase user — rows cascade. Still to test | C | L |
+| [x] | Account page: email, membership + trial state, manage billing, sign out, delete account | C | L |
+| [x] | Account deletion: cancels Stripe subscriptions, strips name/email from the Stripe customer (invoices kept for tax), deletes the Supabase user — rows cascade. Tested | C | L |
 
 ## 2 · Payments
 
